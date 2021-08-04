@@ -8,6 +8,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -57,7 +58,8 @@ public class Game extends BukkitRunnable {
 		for (PotionEffect effect : e.getActivePotionEffects())
 			e.removePotionEffect(effect.getType());
 		e.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 200000, 2));
-		fullClear(e);
+		fullClear(e);		
+		e.setCanPickupItems(false);
 	}
 
 	public void unregisterPlayer(Player e) {
@@ -90,6 +92,10 @@ public class Game extends BukkitRunnable {
 		ItemMeta itemMeta1 = a.getItemMeta();
 		itemMeta1.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&6Katana"));
 		a.setItemMeta(itemMeta1);
+		
+		a.getItemMeta().spigot().setUnbreakable(true);
+		b.getItemMeta().spigot().setUnbreakable(true);
+		c.getItemMeta().spigot().setUnbreakable(true);
 
 		p.getInventory().setItem(0, a);
 		p.getInventory().setItem(1, b);

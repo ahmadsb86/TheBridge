@@ -15,6 +15,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.weather.WeatherChangeEvent;
 
 public class MapProtect implements Listener {
 
@@ -34,7 +35,7 @@ public class MapProtect implements Listener {
 			if (b.getType() != Material.STAINED_CLAY) {
 				event.setCancelled(true);
 				event.getPlayer()
-						.sendMessage(ChatColor.translateAlternateColorCodes('&', "&4bruh imagine trying to grief"));
+				.sendMessage(ChatColor.translateAlternateColorCodes('&', "&4bruh imagine trying to grief"));
 			} else {
 				braked.put(b.getLocation(), b.getType());
 			}
@@ -48,7 +49,7 @@ public class MapProtect implements Listener {
 			if (b.getY() > 99) {
 				event.setCancelled(true);
 				event.getPlayer()
-						.sendMessage(ChatColor.translateAlternateColorCodes('&', "&4bruh imagine trying to skybase"));
+				.sendMessage(ChatColor.translateAlternateColorCodes('&', "&4bruh imagine trying to skybase"));
 				return;
 			}
 
@@ -108,6 +109,17 @@ public class MapProtect implements Listener {
 				e.setCancelled(true);
 			}
 		}
+	}
+
+	@EventHandler
+	public void onWeather(WeatherChangeEvent e){
+		if(enabled) {
+
+
+			World ew = e.getWorld();
+			if(ew.hasStorm()){
+				ew.setWeatherDuration(0);
+			}}
 	}
 
 	public void disable() {
