@@ -1,0 +1,12 @@
+main: me.bzBear.Bridge.Main
+name: Bridge
+version: V1
+author: bzBear
+
+commands:
+  tb play:
+  tb skip:
+  tb leave:
+  tb help:
+  tb reset:
+  tb:
