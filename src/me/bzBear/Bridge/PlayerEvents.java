@@ -3,6 +3,7 @@ package me.bzBear.Bridge;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -15,6 +16,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
@@ -35,6 +37,7 @@ public class PlayerEvents implements Listener {
 
 				Arrow a = (Arrow) event.getEntity();
 				Player p = (Player) a.getShooter();
+				p.getInventory().setItem(8, new ItemStack(Material.AIR));
 				p.setLevel(3);
 
 			}
@@ -66,8 +69,10 @@ public class PlayerEvents implements Listener {
 				Arrow a = (Arrow) event.getEntity();
 				Player p = (Player) a.getShooter();
 				p.setLevel(0);
-				p.getInventory().setItem(8, new ItemStack(Material.ARROW));
-
+				ItemStack arrow = new ItemStack(Material.ARROW);
+				if(p.getInventory().getItem(8) != arrow) {
+					p.getInventory().setItem(8, new ItemStack(Material.ARROW));
+				}
 			}
 		}, 60);
 
@@ -95,6 +100,8 @@ public class PlayerEvents implements Listener {
 			}
 		}
 	}
+	
+	
 
 
 	@EventHandler

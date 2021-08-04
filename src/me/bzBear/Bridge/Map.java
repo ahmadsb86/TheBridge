@@ -14,7 +14,12 @@ public class Map {
 	Map(String a, int x1, int y1, int z1, int x2, int y2, int z2, int l, int bl) {
 		name = a;
 		world = Bukkit.getWorld(name);
-		redSpawn = new Location(world, x1,y1,z1);
-		redSpawn = new Location(world, x2,y2,z2);
+		redSpawn = new Location(world, x1,y1,z1, 90, 0);
+		blueSpawn = new Location(world, x2,y2,z2, -90, 0);
+		bridgeLevel = l;
+		buildLim = bl;
 	}
+	
+	
+	//Urban is 26 and 93
 }

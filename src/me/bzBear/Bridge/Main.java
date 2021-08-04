@@ -13,14 +13,15 @@ import org.bukkit.potion.PotionEffectType;
 
 public class Main extends JavaPlugin{
 	
-	Game g = new Game("Urban", 2);
-	Location mapSpawn = new Location(Bukkit.getWorld("Urban"), 30, 96, 0);
-	Location hub = new Location(Bukkit.getWorld("world"), 0, 100, 0);
+	GameManager gm;
+	Location hub;
 	
 	
 	@Override
 	public void onEnable(){
 		Bukkit.getPluginManager().registerEvents(new PlayerEvents(this), this);
+		gm = new GameManager(this);
+		hub =  new Location(Bukkit.getWorld("world"), 0, 100, 0);
     }
 	
 	@Override 
@@ -38,28 +39,21 @@ public class Main extends JavaPlugin{
 			switch(args[0]) {
 			
 			  case "play":
-				  Bukkit.getPluginManager().registerEvents(g.protector, this);
-				  g.protector.enable();
-				  p.teleport(mapSpawn);
-				  g.registerPlayer(p);
+				  gm.QueuePlayer(p);
+				  p.sendMessage(ChatColor.AQUA + "Joined Game");
 				  break;
 				  
 			  case "skip":
-				  p.teleport(mapSpawn);
-				  g.start();
+				  gm.startGame(p);
 				  break;
 				  
-			  case "leave":
-				  g.protector.disable();
-				  p.teleport(hub);
-				  for (PotionEffect effect : p.getActivePotionEffects())
-				        p.removePotionEffect(effect.getType());
-				  g.unregisterPlayer(p);
+			  case "leave":	
+				  gm.playerLeave(p);
+				  p.sendMessage(ChatColor.AQUA + "Game Left");
 				  break;
 				  
 			  case "reset":
-				  g.protector.rebuild();
-				  g.reset();
+				  gm.forceReset(p);
 				  p.sendMessage(ChatColor.AQUA + "Reset Complete");
 				  break;
 			

@@ -20,11 +20,11 @@ import org.bukkit.event.weather.WeatherChangeEvent;
 public class MapProtect implements Listener {
 
 	boolean enabled = true;
-	public String map = "";
+	public Map map;
 	HashMap<Location, Material> placed = new HashMap<>();
 	HashMap<Location, Material> braked = new HashMap<>();
 
-	public MapProtect(String a) {
+	public MapProtect(Map a) {
 		map = a;
 	}
 
@@ -53,17 +53,11 @@ public class MapProtect implements Listener {
 				return;
 			}
 
-			switch (map) {
-			case "Urban":
-				if (b.getX() > 26 || b.getX() < -26) {
-					event.setCancelled(true);
-					event.getPlayer().sendMessage(
-							ChatColor.translateAlternateColorCodes('&', "&4bruh imagine trying to spam bloc"));
-					return;
-				}
-				break;
-			default:
-				Bukkit.broadcastMessage(ChatColor.BLACK + "ERROR: WORLD NOT FOUND; MAPPROTECT.JAVA LINE 47");
+
+			if (b.getX() > map.buildLim || b.getX() < 0-map.buildLim) {
+				event.setCancelled(true);
+				event.getPlayer().sendMessage(
+						ChatColor.translateAlternateColorCodes('&', "&4bruh imagine trying to spam bloc"));
 				return;
 			}
 
@@ -71,15 +65,16 @@ public class MapProtect implements Listener {
 		}
 	}
 
+
 	@SuppressWarnings("deprecation")
 	public void rebuild() {
 		for (HashMap.Entry<Location, Material> me : placed.entrySet()) {
-			Bukkit.getWorld(map).getBlockAt(me.getKey()).setType(Material.AIR);
+			Bukkit.getWorld(map.name).getBlockAt(me.getKey()).setType(Material.AIR);
 			;
 		}
 		for (HashMap.Entry<Location, Material> me : braked.entrySet()) {
-			Block b = Bukkit.getWorld(map).getBlockAt(me.getKey());
-			if (b.getY() < 93) {
+			Block b = Bukkit.getWorld(map.name).getBlockAt(me.getKey());
+			if (b.getY() < map.bridgeLevel) {
 				b.setType(me.getValue());
 				if (b.getX() > 0) {
 					b.setData((byte) 14);
@@ -113,7 +108,7 @@ public class MapProtect implements Listener {
 
 	@EventHandler
 	public void onWeatherChange(WeatherChangeEvent e){
-	  e.setCancelled(true);
+		e.setCancelled(true);
 	}
 
 	public void disable() {
