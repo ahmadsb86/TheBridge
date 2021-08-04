@@ -112,14 +112,8 @@ public class MapProtect implements Listener {
 	}
 
 	@EventHandler
-	public void onWeather(WeatherChangeEvent e){
-		if(enabled) {
-
-
-			World ew = e.getWorld();
-			if(ew.hasStorm()){
-				ew.setWeatherDuration(0);
-			}}
+	public void onWeatherChange(WeatherChangeEvent e){
+	  e.setCancelled(true);
 	}
 
 	public void disable() {
