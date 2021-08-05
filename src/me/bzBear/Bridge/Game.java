@@ -27,9 +27,10 @@ public class Game {
 	public Map map;
 	public int players;
 	MapProtect protector;
+	PlayerEvents pe;
 	Plugin plugin;
 	GameManager gm;
-	GameState state;
+	GameState state = GameState.EMPTY;
 
 	public Game(Map a, int b, Plugin c, GameManager d) {
 		plugin = c;
@@ -37,8 +38,9 @@ public class Game {
 		map = a;
 		players = b;
 		protector = new MapProtect(map);
+		pe = new PlayerEvents(c, this);
+		Bukkit.getPluginManager().registerEvents(pe, plugin);
 		Bukkit.getPluginManager().registerEvents(protector, plugin);
-		state = GameState.INIT;
 
 	}
 
@@ -81,11 +83,13 @@ public class Game {
 		}
 		protector.rebuild();
 		protector.disable();
+		pe.disable();
 		state = GameState.EMPTY;
 	}
 
 	public void make() {
 		protector.enable();
+		pe.enable();
 	}
 
 	public void registerPlayer(Player e) {
@@ -192,7 +196,36 @@ public class Game {
 		i.setItemMeta(meta);
 		return i;
 	}
+	
+	public void score(Player e) {
+		cages();
+		for(Player a: p) {
+			
+			
+			
+			for (PotionEffect effect : e.getActivePotionEffects())
+				e.removePotionEffect(effect.getType());
+			
+			if(isBlue(e)) {
+				a.sendMessage(ChatColor.BLUE + e.getDisplayName() + ChatColor.WHITE + " Scored");
+				fullClear(e);
+				giveItems(e, 11);
+				giveArmor(e, Color.BLUE);
+				e.teleport(map.blueSpawn);
+			}
+			else {
+				a.sendMessage(ChatColor.RED + e.getDisplayName() + ChatColor.WHITE + " Scored");
+				fullClear(e);
+				giveItems(e, 14);
+				giveArmor(e, Color.RED);
+				e.teleport(map.redSpawn);
+			}
+			
 
+			
+		}
+	}
+	
 	public void reset() {
 
 		protector.rebuild();
@@ -204,7 +237,7 @@ public class Game {
 
 			p.get(i).getInventory().clear();
 
-			if(p.get(i).getInventory().getChestplate().getItemMeta().getDisplayName().equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&', "&4Blue Shirt"))) {
+			if(isBlue(p.get(i))) {
 				giveItems(p.get(i), 11);
 				p.get(i).teleport(map.blueSpawn);
 			}
@@ -216,6 +249,13 @@ public class Game {
 		}
 
 
+	}
+	
+	public static Boolean isBlue(Player p) {
+		if(p.getInventory().getChestplate().getItemMeta().getDisplayName().equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&', "&4Blue Shirt"))) {
+			return true;
+		}
+		return false;
 	}
 	
 	public void gameStartTitle(Player p) {

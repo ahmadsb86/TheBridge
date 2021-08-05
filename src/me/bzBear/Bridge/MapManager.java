@@ -9,5 +9,7 @@ public class MapManager {
 	
 	Map Urban = new Map("Urban", 30, 101, 0, -30, 101, 0, 93, 26,
 			new xyz(27, 96, -4), new xyz(6,10,9), new xyz(-83, 0, 0),
-			new xyz(-33,96,-4), new xyz(6,10,9), new xyz(-23, 0, 0));
+			new xyz(-33,96,-4), new xyz(6,10,9), new xyz(-23, 0, 0),
+			new xyz(-35, 91, -2), new xyz(-31, 91, 2), new xyz(31, 91, -2), new xyz(35, 91, 2)
+			);
 }

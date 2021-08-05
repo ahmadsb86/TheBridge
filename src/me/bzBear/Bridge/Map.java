@@ -37,7 +37,12 @@ public class Map {
 	xyz redCageRemoveLoc;
 	xyz redCageRemoveSize;
 	xyz redCageDiff;
-	Map(String worldName, int x1, int y1, int z1, int x2, int y2, int z2, int l, int bl, xyz a, xyz b, xyz c, xyz d, xyz e, xyz f) {
+	xyz redGoalNW;
+	xyz redGoalSE;
+	xyz blueGoalNW;
+	xyz blueGoalSE;
+	
+	Map(String worldName, int x1, int y1, int z1, int x2, int y2, int z2, int l, int bl, xyz a, xyz b, xyz c, xyz d, xyz e, xyz f, xyz g, xyz h, xyz i, xyz j) {
 		
 		name = worldName;
 		world = Bukkit.getWorld(name);
@@ -53,6 +58,12 @@ public class Map {
 		blueCageRemoveLoc = d;
 		blueCageRemoveSize = e;
 		blueCageDiff = f;
+		
+		blueGoalNW = g;
+		blueGoalSE =h;
+		redGoalNW = i;
+		redGoalSE = j;
+		
 	}
 	
 

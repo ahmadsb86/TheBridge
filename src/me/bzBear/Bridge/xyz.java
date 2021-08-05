@@ -9,4 +9,10 @@ public class xyz {
 		y = b;
 		z = c;
 	}
+	public static Boolean between2D(xyz a, xyz b, double x, double y) {
+		if(x > a.x && x < b.x && y > a.y && y < b.y) {
+			return true;
+		}
+		return false;
+	}
 }

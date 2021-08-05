@@ -3,10 +3,13 @@ name: Bridge
 version: V1
 author: bzBear
 
+softdepend: [HolographicDisplays]
 commands:
   tb play:
   tb skip:
   tb leave:
   tb help:
   tb reset:
+  tb score:
+  tb leaderboards:
   tb:
