@@ -8,7 +8,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -62,9 +66,13 @@ public class Game extends BukkitRunnable {
 			}
 
 			p.get(i).sendMessage(ChatColor.translateAlternateColorCodes('&', "&4\nGame Starting..."));
+			gameStartTitle(p.get(i));
+			cages();
+			
 		}
 	}
-
+	
+	
 	public void end() {
 		for(Player e: p) {
 			unregisterPlayer(e);
@@ -188,6 +196,95 @@ public class Game extends BukkitRunnable {
 
 
 	}
+	
+	public void gameStartTitle(Player p) {
+		PacketUtils.sendActionBar(p, ChatColor.YELLOW + "Game Starting");
+		PacketUtils.sendTitle(p, ChatColor.GREEN + "Game starting in", "3 seconds", 0, 20, 0);
+		p.playSound(p.getLocation(), Sound.CLICK, 1, 1);
+		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+			@Override
+			public void run() {
+
+				
+				PacketUtils.sendTitle(p, ChatColor.GREEN + "Game starting in", "2 seconds", 0, 20, 0);
+				p.playSound(p.getLocation(), Sound.CLICK, 1, 1);
+				
+
+			}
+		}, 20);
+		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+			@Override
+			public void run() {
+
+				
+				PacketUtils.sendTitle(p, ChatColor.GREEN + "Game starting in", "1 second", 0, 20, 0);
+				p.playSound(p.getLocation(), Sound.CLICK, 1, 1);
+				
+				
+
+			}
+		}, 40);
+		
+		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+			@Override
+			public void run() {
+
+				
+				PacketUtils.sendTitle(p, ChatColor.GREEN + "", "", 0, 20, 0);
+				p.playSound(p.getLocation(), Sound.NOTE_PLING, 1, 1);
+				
+				
+
+			}
+		}, 60);
+	}
+	
+	@SuppressWarnings("deprecation")
+	public void cages() {
+//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.blueCageReplaceCmd);
+//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.redCageReplaceCmd);
+		
+		for(int x = map.blueCageRemoveLoc.x; x <= map.blueCageRemoveLoc.x+map.blueCageRemoveSize.x; x++) {
+			for(int y = map.blueCageRemoveLoc.y; y <= map.blueCageRemoveLoc.y+map.blueCageRemoveSize.y; y++) {
+				for(int z = map.blueCageRemoveLoc.z; z <= map.blueCageRemoveLoc.z+map.blueCageRemoveSize.z; z++) {
+					Block paste = map.world.getBlockAt(x,y,z);
+					xyz pastediff = map.blueCageDiff;
+					Block copy = map.world.getBlockAt(x+pastediff.x,y+pastediff.y,z+pastediff.z);
+							
+					paste.setType(copy.getType());
+					paste.setData(copy.getData());
+					
+				}
+			}
+		}
+		
+		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+			@Override
+			public void run() {
+				
+				
+//				Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.blueCageRemove);
+//				Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.redCageRemove);
+				
+				for(int x = map.blueCageRemoveLoc.x; x <= map.blueCageRemoveLoc.x+map.blueCageRemoveSize.x; x++) {
+					for(int y = map.blueCageRemoveLoc.y; y <= map.blueCageRemoveLoc.y+map.blueCageRemoveSize.y; y++) {
+						for(int z = map.blueCageRemoveLoc.z; z <= map.blueCageRemoveLoc.z+map.blueCageRemoveSize.z; z++) {
+							map.world.getBlockAt(x,y,z).setType(Material.AIR);
+						}
+					}
+				}
+				
+				for(Entity e: map.world.getEntities()) {
+					if(e instanceof Item) {
+						e.remove();
+					}
+				}
+				
+
+			}
+		}, 60);
+	}
+
 
 
 

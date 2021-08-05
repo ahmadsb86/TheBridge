@@ -6,7 +6,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -32,12 +31,12 @@ public class MapProtect implements Listener {
 	public void onBlockBreak(BlockBreakEvent event) {
 		if (enabled) {
 			org.bukkit.block.Block b = event.getBlock();
-			if (b.getType() != Material.STAINED_CLAY) {
+			if (b.getType() == Material.STAINED_CLAY &&  (b.getX() < map.buildLim  && b.getX() > 0-map.buildLim) ) {
+				braked.put(b.getLocation(), b.getType());
+			} else {
 				event.setCancelled(true);
 				event.getPlayer()
 				.sendMessage(ChatColor.translateAlternateColorCodes('&', "&4bruh imagine trying to grief"));
-			} else {
-				braked.put(b.getLocation(), b.getType());
 			}
 		}
 	}

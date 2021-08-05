@@ -47,6 +47,7 @@ public class GameManager {
 	public void playerLeave(Player p) {
 		Game g = gamers.get(p);
 		g.unregisterPlayer(p);
+		gamers.remove(p);
 		if(g.p.size() == 0) {
 			g.end();
 		}
