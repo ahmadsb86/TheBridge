@@ -20,14 +20,16 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 
-public class Game extends BukkitRunnable {
+import me.bzBear.Bridge.GameStateEnum.GameState;
+
+public class Game {
 	public Map map;
 	public int players;
 	MapProtect protector;
 	Plugin plugin;
 	GameManager gm;
+	GameState state;
 
 	public Game(Map a, int b, Plugin c, GameManager d) {
 		plugin = c;
@@ -35,17 +37,13 @@ public class Game extends BukkitRunnable {
 		map = a;
 		players = b;
 		protector = new MapProtect(map);
-		protector.enable();
 		Bukkit.getPluginManager().registerEvents(protector, plugin);
+		state = GameState.INIT;
 
 	}
 
 	List<Player> p = new ArrayList<>();
 
-	@Override
-	public void run() {
-		// a
-	}
 
 	public void start() {
 		for (int i = 0; i < p.size(); i++) {
@@ -66,10 +64,14 @@ public class Game extends BukkitRunnable {
 			}
 
 			p.get(i).sendMessage(ChatColor.translateAlternateColorCodes('&', "&4\nGame Starting..."));
+			
+			state = GameState.CAGE;
 			gameStartTitle(p.get(i));
 			cages();
 			
 		}
+		
+		
 	}
 	
 	
@@ -79,6 +81,7 @@ public class Game extends BukkitRunnable {
 		}
 		protector.rebuild();
 		protector.disable();
+		state = GameState.EMPTY;
 	}
 
 	public void make() {
@@ -94,6 +97,16 @@ public class Game extends BukkitRunnable {
 		e.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 200000, 10));
 		fullClear(e);		
 		e.setCanPickupItems(false);
+		
+		
+		
+		if(p.size() == players) {
+			state = GameState.FULL;
+		}
+		else {
+			state = GameState.WAITING;
+		}
+		
 	}
 
 	public void unregisterPlayer(Player e) {
@@ -102,6 +115,14 @@ public class Game extends BukkitRunnable {
 		fullClear(e);
 		p.remove(e);
 		e.teleport(gm.hub);
+		
+		if(state == GameState.WAITING && p.size() == 0) {
+			state = GameState.EMPTY;
+		}
+		
+		if(state == GameState.FULL) {
+			state = GameState.WAITING;
+		}
 	}
 
 	public void fullClear(Player e) {
@@ -158,7 +179,7 @@ public class Game extends BukkitRunnable {
 
 	}
 
-	public static ItemStack getColorArmor(Material m, Color c,  String name, String... lore) {
+	public ItemStack getColorArmor(Material m, Color c,  String name, String... lore) {
 		ItemStack i = new ItemStack(m, 1);
 		LeatherArmorMeta meta = (LeatherArmorMeta) i.getItemMeta();
 		meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
@@ -244,6 +265,20 @@ public class Game extends BukkitRunnable {
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.blueCageReplaceCmd);
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.redCageReplaceCmd);
 		
+		for(int x = map.redCageRemoveLoc.x; x <= map.redCageRemoveLoc.x+map.redCageRemoveSize.x; x++) {
+			for(int y = map.redCageRemoveLoc.y; y <= map.redCageRemoveLoc.y+map.redCageRemoveSize.y; y++) {
+				for(int z = map.redCageRemoveLoc.z; z <= map.redCageRemoveLoc.z+map.redCageRemoveSize.z; z++) {
+					Block paste = map.world.getBlockAt(x,y,z);
+					xyz pastediff = map.redCageDiff;
+					Block copy = map.world.getBlockAt(x+pastediff.x,y+pastediff.y,z+pastediff.z);
+							
+					paste.setType(copy.getType());
+					paste.setData(copy.getData());
+					
+				}
+			}
+		}
+		
 		for(int x = map.blueCageRemoveLoc.x; x <= map.blueCageRemoveLoc.x+map.blueCageRemoveSize.x; x++) {
 			for(int y = map.blueCageRemoveLoc.y; y <= map.blueCageRemoveLoc.y+map.blueCageRemoveSize.y; y++) {
 				for(int z = map.blueCageRemoveLoc.z; z <= map.blueCageRemoveLoc.z+map.blueCageRemoveSize.z; z++) {
@@ -263,8 +298,13 @@ public class Game extends BukkitRunnable {
 			public void run() {
 				
 				
-//				Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.blueCageRemove);
-//				Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.redCageRemove);
+				for(int x = map.redCageRemoveLoc.x; x <= map.redCageRemoveLoc.x+map.redCageRemoveSize.x; x++) {
+					for(int y = map.redCageRemoveLoc.y; y <= map.redCageRemoveLoc.y+map.redCageRemoveSize.y; y++) {
+						for(int z = map.redCageRemoveLoc.z; z <= map.redCageRemoveLoc.z+map.redCageRemoveSize.z; z++) {
+							map.world.getBlockAt(x,y,z).setType(Material.AIR);
+						}
+					}
+				}
 				
 				for(int x = map.blueCageRemoveLoc.x; x <= map.blueCageRemoveLoc.x+map.blueCageRemoveSize.x; x++) {
 					for(int y = map.blueCageRemoveLoc.y; y <= map.blueCageRemoveLoc.y+map.blueCageRemoveSize.y; y++) {
@@ -279,6 +319,8 @@ public class Game extends BukkitRunnable {
 						e.remove();
 					}
 				}
+				
+				state = GameState.RUNNING;
 				
 
 			}
