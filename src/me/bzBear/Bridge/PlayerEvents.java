@@ -38,14 +38,14 @@ public class PlayerEvents implements Listener {
 				
 				Player fell = (Player) e.getPlayer();
 				if(Game.isBlue(fell)) {
-					if(xyz.between2D(g.map.redGoalNW, g.map.redGoalSE, e.getPlayer().getLocation().getX(),e.getPlayer().getLocation().getY())) {
+					if(xyz.between2D(g.map.redGoalNW, g.map.redGoalSE, e.getPlayer().getLocation().getX(),e.getPlayer().getLocation().getZ())) {
 						g.score(fell);
 						return;
 					}
 				}
 				else {
 					
-					if(xyz.between2D(g.map.blueGoalNW, g.map.blueGoalSE, e.getPlayer().getLocation().getX(),e.getPlayer().getLocation().getY())) {
+					if(xyz.between2D(g.map.blueGoalNW, g.map.blueGoalSE, e.getPlayer().getLocation().getX(),e.getPlayer().getLocation().getZ())) {
 						g.score(fell);
 						return;
 					}
@@ -61,6 +61,8 @@ public class PlayerEvents implements Listener {
 					c = ChatColor.RED;
 					fell.teleport(g.map.blueSpawn);
 				}
+				
+				
 				for(Player p: g.p) {
 					p.playSound(p.getLocation(), Sound.NOTE_PLING, 1, 1);
 					if(Game.isBlue(fell)) {

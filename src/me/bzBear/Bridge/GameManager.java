@@ -33,6 +33,7 @@ public class GameManager {
 	}
 
 	public void QueuePlayer(Player p) {
+		
 		Game g = findOpenLobby();
 		if(g == null) {
 			p.sendMessage(ChatColor.RED + "No open lobbies. Please try again in a bit");

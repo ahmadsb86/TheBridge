@@ -3,7 +3,8 @@ name: Bridge
 version: V1
 author: bzBear
 
-softdepend: [HolographicDisplays]
+softdepend: [HolographicDisplays, ScoreboardStats]
+
 commands:
   tb play:
   tb skip:

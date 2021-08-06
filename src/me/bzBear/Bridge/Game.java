@@ -31,6 +31,9 @@ public class Game {
 	Plugin plugin;
 	GameManager gm;
 	GameState state = GameState.EMPTY;
+	ScoreboardManager sbm;
+	int t;
+	List<Player> p = new ArrayList<>();
 
 	public Game(Map a, int b, Plugin c, GameManager d) {
 		plugin = c;
@@ -41,10 +44,11 @@ public class Game {
 		pe = new PlayerEvents(c, this);
 		Bukkit.getPluginManager().registerEvents(pe, plugin);
 		Bukkit.getPluginManager().registerEvents(protector, plugin);
+		
 
 	}
 
-	List<Player> p = new ArrayList<>();
+	
 
 
 	public void start() {
@@ -72,6 +76,9 @@ public class Game {
 			cages();
 			
 		}
+		
+		sbm = new ScoreboardManager(plugin, p);
+		sbm.set();
 		
 		
 	}
@@ -118,6 +125,7 @@ public class Game {
 			e.removePotionEffect(effect.getType());
 		fullClear(e);
 		p.remove(e);
+		sbm.remove(e);
 		e.teleport(gm.hub);
 		
 		if(state == GameState.WAITING && p.size() == 0) {
@@ -212,8 +220,10 @@ public class Game {
 				giveItems(e, 11);
 				giveArmor(e, Color.BLUE);
 				e.teleport(map.blueSpawn);
+				
 			}
 			else {
+				//a
 				a.sendMessage(ChatColor.RED + e.getDisplayName() + ChatColor.WHITE + " Scored");
 				fullClear(e);
 				giveItems(e, 14);
@@ -221,8 +231,12 @@ public class Game {
 				e.teleport(map.redSpawn);
 			}
 			
-
-			
+		}
+		if(isBlue(e)) {
+			GameTitle(5, ChatColor.BLUE + e.getDisplayName() + " Scored");
+		}
+		else {
+			GameTitle(5, ChatColor.RED + e.getDisplayName() + " Scored");
 		}
 	}
 	
@@ -260,48 +274,13 @@ public class Game {
 	
 	public void gameStartTitle(Player p) {
 		PacketUtils.sendActionBar(p, ChatColor.YELLOW + "Game Starting");
-		PacketUtils.sendTitle(p, ChatColor.GREEN + "Game starting in", "3 seconds", 0, 20, 0);
-		p.playSound(p.getLocation(), Sound.CLICK, 1, 1);
-		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
-			@Override
-			public void run() {
-
-				
-				PacketUtils.sendTitle(p, ChatColor.GREEN + "Game starting in", "2 seconds", 0, 20, 0);
-				p.playSound(p.getLocation(), Sound.CLICK, 1, 1);
-				
-
-			}
-		}, 20);
-		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
-			@Override
-			public void run() {
-
-				
-				PacketUtils.sendTitle(p, ChatColor.GREEN + "Game starting in", "1 second", 0, 20, 0);
-				p.playSound(p.getLocation(), Sound.CLICK, 1, 1);
-				
-				
-
-			}
-		}, 40);
-		
-		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
-			@Override
-			public void run() {
-
-				
-				PacketUtils.sendTitle(p, ChatColor.GREEN + "", "", 0, 20, 0);
-				p.playSound(p.getLocation(), Sound.NOTE_PLING, 1, 1);
-				
-				
-
-			}
-		}, 60);
+		GameTitle(5,ChatColor.GREEN + "Game Starting");
 	}
 	
 	@SuppressWarnings("deprecation")
 	public void cages() {
+
+		
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.blueCageReplaceCmd);
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.redCageReplaceCmd);
 		
@@ -364,10 +343,40 @@ public class Game {
 				
 
 			}
-		}, 60);
+		}, 100);
 	}
 
+	public void GameTitle(int seconds, String title) { 
+		
+		t = seconds;
+		
+		int id = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
+				@Override
+				public void run() {
+					
+					for(Player e: p) {
+						PacketUtils.sendTitle(e, title, "Game starting in "+ t, 0, 20, 0);
+						e.playSound(e.getLocation(), Sound.CLICK, 1, 1);
+					}
+					
+					t = t - 1;
 
+				} 
+		}, 0, 20).getTaskId();
+		
+		
+			
+		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+			@Override
+			public void run() {
+				Bukkit.getScheduler().cancelTask(id);
+				for(Player e: p) {
+					PacketUtils.sendTitle(e, "", "", 0, 20, 0);
+					e.playSound(e.getLocation(), Sound.NOTE_PLING, 1, 1);
+				}
 
+			}
+		}, seconds*20 + 1);
+	}
 
 }

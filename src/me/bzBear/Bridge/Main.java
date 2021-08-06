@@ -8,9 +8,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.github.games647.scoreboardstats.ScoreboardStats;
 import com.gmail.filoghost.holographicdisplays.api.Hologram;
 import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
 import com.gmail.filoghost.holographicdisplays.api.line.TextLine;
+
+import me.bzBear.Bridge.GameStateEnum.GameState;
 
 
 public class Main extends JavaPlugin{
@@ -18,19 +21,24 @@ public class Main extends JavaPlugin{
 	GameManager gm;
 	Location hub;
 	Boolean useHolographicDisplays;
+	Boolean useScoreboardStats;
+	Hologram hologram;
 
 
 	@Override
 	public void onEnable(){
 
 		useHolographicDisplays = Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays");
+		useScoreboardStats = Bukkit.getPluginManager().isPluginEnabled("ScoreboardStats");
 
 		if (useHolographicDisplays == false) {
 			getLogger().severe("*** HolographicDisplays is not installed or not enabled. ***");
 			getLogger().severe("*** This plugin will not work correctly. ***");
-
-			Bukkit.broadcastMessage(ChatColor.RED +"HolographicDisplays is not installed or not enabled. Leaderboards will not work");
 		}
+		
+        if (useScoreboardStats == false) {
+        	//a
+        }
 
 
 		gm = new GameManager(this);
@@ -39,6 +47,9 @@ public class Main extends JavaPlugin{
 
 	@Override 
 	public void onDisable() {
+		if(hologram != null) {
+			hologram.delete();
+		}
 	}
 
 
@@ -69,18 +80,34 @@ public class Main extends JavaPlugin{
 				p.sendMessage(ChatColor.AQUA + "Reset Complete");
 				break;
 
-			case "leaderboards":
+			case "createLb":
 				if(useHolographicDisplays) {
-					Hologram hologram = HologramsAPI.createHologram(this, p.getLocation());
+					hologram = HologramsAPI.createHologram(this, p.getLocation());
+					hologram.appendTextLine(ChatColor.AQUA + "All-Time Winstreak Leaderboards");
+					hologram.appendTextLine(ChatColor.GRAY + "-------------------------------");
 					TextLine textLine = hologram.appendTextLine(ChatColor.translateAlternateColorCodes('&', "&2zeBeeZee &1 - &4 999999"));
 				}
 				else {
 					p.sendMessage("Holographic Displays plugin needs to be installed and enabled.");
 				}
+				break;
+				
+			case "destroyLb":
+				if(hologram == null) {
+					p.sendMessage(ChatColor.RED + "No hologram set.");
+				}
+				hologram.delete();
+				break;
 				
 			case "score":
 				if(gm.gamers.containsKey(p)) {
-					gm.gamers.get(p).score(p);
+					if(gm.gamers.get(p).state == GameState.RUNNING) {
+						gm.gamers.get(p).score(p);
+					}
+					else {
+						p.sendMessage(ChatColor.RED + "You must be in a running game and not in a cage to run this command");
+					}
+					
 				}
 				else {
 					p.sendMessage(ChatColor.RED + "You are not in a game");

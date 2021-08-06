@@ -7,6 +7,7 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="C:/Users/ahmad/Desktop/BEDWARS/spigot.jar"/>
-	<classpathentry kind="lib" path="C:/Users/ahmad/Downloads/holographicdisplays-api-2.4.9.jar"/>
+	<classpathentry kind="lib" path="C:/Users/ahmad/Desktop/BEDWARS/plugins/holographicdisplays-api-2.4.9.jar"/>
+	<classpathentry kind="lib" path="C:/Users/ahmad/Downloads/ScoreboardStats.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
