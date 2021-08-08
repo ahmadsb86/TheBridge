@@ -7,6 +7,7 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
@@ -20,6 +21,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import me.bzBear.Bridge.GameStateEnum.GameState;
 
@@ -32,8 +34,10 @@ public class Game {
 	GameManager gm;
 	GameState state = GameState.EMPTY;
 	ScoreboardManager sbm;
+	int blueScore = 0;
+	int redScore = 0;
 	int t;
-	List<Player> p = new ArrayList<>();
+	List<BridgePlayer> p = new ArrayList<>();
 
 	public Game(Map a, int b, Plugin c, GameManager d) {
 		plugin = c;
@@ -41,53 +45,56 @@ public class Game {
 		map = a;
 		players = b;
 		protector = new MapProtect(map);
-		pe = new PlayerEvents(c, this);
+		pe = new PlayerEvents(c, this, p);
 		Bukkit.getPluginManager().registerEvents(pe, plugin);
 		Bukkit.getPluginManager().registerEvents(protector, plugin);
-		
 
 	}
-
-	
-
 
 	public void start() {
+
+		sbm = new ScoreboardManager(plugin, p);
+		pe.bp = p;
+
 		for (int i = 0; i < p.size(); i++) {
-			for (PotionEffect effect : p.get(i).getActivePotionEffects())
-				p.get(i).removePotionEffect(effect.getType());
-			p.get(i).getInventory().clear();
 
+			Player bp = p.get(i).bp;
 
-			if(i<players/2) {
-				giveArmor(p.get(i), Color.BLUE);
-				giveItems(p.get(i), 11);
-				p.get(i).teleport(map.blueSpawn);
+			for (PotionEffect effect : bp.getActivePotionEffects())
+				bp.removePotionEffect(effect.getType());
+			bp.getInventory().clear();
+
+			if (p.get(i).isBlue()) {
+				giveArmor(bp, Color.BLUE);
+				giveItems(bp, 11);
+				bp.teleport(map.blueSpawn);
+			} else {
+				giveArmor(bp, Color.RED);
+				giveItems(bp, 14);
+				bp.teleport(map.redSpawn);
 			}
-			else{
-				giveArmor(p.get(i), Color.RED);
-				giveItems(p.get(i), 14);
-				p.get(i).teleport(map.redSpawn);
-			}
 
-			p.get(i).sendMessage(ChatColor.translateAlternateColorCodes('&', "&4\nGame Starting..."));
+			bp.sendMessage(ChatColor.translateAlternateColorCodes('&', "&4\nGame Starting..."));
+
 			
-			state = GameState.CAGE;
-			gameStartTitle(p.get(i));
-			cages();
-			
+			sbm.set(p.get(i));
+
 		}
 		
-		sbm = new ScoreboardManager(plugin, p);
-		sbm.set();
-		
-		
+		state = GameState.CAGE;
+		gameStartTitle();
+		cages();
+
 	}
-	
-	
+
 	public void end() {
-		for(Player e: p) {
+
+		for (int i = 0; i < p.size(); i++) {
+			BridgePlayer e = p.get(i);
 			unregisterPlayer(e);
 		}
+		blueScore = 0;
+		redScore = 0;
 		protector.rebuild();
 		protector.disable();
 		pe.disable();
@@ -100,39 +107,50 @@ public class Game {
 	}
 
 	public void registerPlayer(Player e) {
+
 		e.teleport(map.redSpawn);
-		p.add(e);
+
+		if (p.size()%2 == 0) {
+			p.add(new BridgePlayer(e, Color.BLUE, this, plugin));
+
+		} else {
+			p.add(new BridgePlayer(e, Color.RED, this, plugin));
+		}
+		
+		pe.set(p);
+
 		for (PotionEffect effect : e.getActivePotionEffects())
 			e.removePotionEffect(effect.getType());
 		e.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 200000, 2));
 		e.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 200000, 10));
-		fullClear(e);		
+		fullClear(e);
 		e.setCanPickupItems(false);
-		
-		
-		
-		if(p.size() == players) {
+
+		if (p.size() == players) {
 			state = GameState.FULL;
-		}
-		else {
+		} else {
 			state = GameState.WAITING;
 		}
-		
+
 	}
 
-	public void unregisterPlayer(Player e) {
-		for (PotionEffect effect : e.getActivePotionEffects())
-			e.removePotionEffect(effect.getType());
-		fullClear(e);
+	public void unregisterPlayer(BridgePlayer e) {
+		for (PotionEffect effect : e.bp.getActivePotionEffects())
+			e.bp.removePotionEffect(effect.getType());
+		fullClear(e.bp);
 		p.remove(e);
-		sbm.remove(e);
-		e.teleport(gm.hub);
-		
-		if(state == GameState.WAITING && p.size() == 0) {
+		e.bp.setGameMode(GameMode.SURVIVAL);
+		if (sbm != null) {
+			sbm.remove(e);
+		}
+
+		e.bp.teleport(gm.hub);
+
+		if (state == GameState.WAITING && p.size() == 0) {
 			state = GameState.EMPTY;
 		}
-		
-		if(state == GameState.FULL) {
+
+		if (state == GameState.FULL) {
 			state = GameState.WAITING;
 		}
 	}
@@ -179,204 +197,260 @@ public class Game {
 
 	public void giveArmor(Player p, Color c) {
 
-		if(c == Color.BLUE) {
-			p.getInventory().setChestplate(getColorArmor(Material.LEATHER_CHESTPLATE, c, "&4Blue Shirt", "fuck shirts"," me and my homies be livin shirtless", "like blood gangstas"));
+		if (c == Color.BLUE) {
+			p.getInventory().setChestplate(getColorArmor(Material.LEATHER_CHESTPLATE, c, "&4Blue Shirt", "fuck shirts",
+					" me and my homies be livin shirtless", "like blood gangstas"));
+		} else {
+			p.getInventory().setChestplate(getColorArmor(Material.LEATHER_CHESTPLATE, c, "&4Shirt", "fuck shirts",
+					" me and my homies be livin shirtless", "like blood gangstas"));
 		}
-		else {
-			p.getInventory().setChestplate(getColorArmor(Material.LEATHER_CHESTPLATE, c, "&4Shirt", "fuck shirts"," me and my homies be livin shirtless", "like blood gangstas"));
-		}
-		p.getInventory().setLeggings(getColorArmor(Material.LEATHER_LEGGINGS, c, "&4Pants", "fuck pants"," me and my homies be livin naked", "like blood gangstas"));
-		p.getInventory().setBoots(getColorArmor(Material.LEATHER_BOOTS, c, "&4foots", "fuck boots"," me and my homies be livin bare foot", "like blood gangstas"));
-
+		p.getInventory().setLeggings(getColorArmor(Material.LEATHER_LEGGINGS, c, "&4Pants", "fuck pants",
+				" me and my homies be livin naked", "like blood gangstas"));
+		p.getInventory().setBoots(getColorArmor(Material.LEATHER_BOOTS, c, "&4foots", "fuck boots",
+				" me and my homies be livin bare foot", "like blood gangstas"));
 
 	}
 
-	public ItemStack getColorArmor(Material m, Color c,  String name, String... lore) {
+	public ItemStack getColorArmor(Material m, Color c, String name, String... lore) {
 		ItemStack i = new ItemStack(m, 1);
 		LeatherArmorMeta meta = (LeatherArmorMeta) i.getItemMeta();
 		meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
 		meta.setColor(c);
 
 		List<String> list = new ArrayList<>();
-		for (String s : lore) list.add(ChatColor.translateAlternateColorCodes('&', s));
+		for (String s : lore)
+			list.add(ChatColor.translateAlternateColorCodes('&', s));
 		meta.setLore(list);
 
 		i.setItemMeta(meta);
 		return i;
 	}
-	
-	public void score(Player e) {
+
+	public void score(BridgePlayer scorer) {
+
+		Player e = scorer.bp;
+
+
+
+		scorer.goals ++;
+		if(scorer.isBlue()) {
+			blueScore ++;
+		}
+		else {
+			redScore ++;
+		}
+
+
+		for(BridgePlayer b: p) {
+			sbm.set(b);
+		}
+		if(scorer.goals > 4) {
+			finish(scorer);
+			return;
+		}
+
 		cages();
-		for(Player a: p) {
-			
-			
-			
-			for (PotionEffect effect : e.getActivePotionEffects())
-				e.removePotionEffect(effect.getType());
-			
-			if(isBlue(e)) {
-				a.sendMessage(ChatColor.BLUE + e.getDisplayName() + ChatColor.WHITE + " Scored");
+
+		for (BridgePlayer a : p) {
+
+			for (PotionEffect effect : scorer.bp.getActivePotionEffects())
+				scorer.bp.removePotionEffect(effect.getType());
+
+			if (scorer.isBlue()) {
+				ChatMessage.scored(scorer);
 				fullClear(e);
 				giveItems(e, 11);
 				giveArmor(e, Color.BLUE);
 				e.teleport(map.blueSpawn);
-				
-			}
-			else {
-				//a
-				a.sendMessage(ChatColor.RED + e.getDisplayName() + ChatColor.WHITE + " Scored");
+
+			} else {
+				// a
+				ChatMessage.scored(scorer);
 				fullClear(e);
 				giveItems(e, 14);
 				giveArmor(e, Color.RED);
 				e.teleport(map.redSpawn);
 			}
-			
+
 		}
-		if(isBlue(e)) {
+		if (scorer.isBlue()) {
 			GameTitle(5, ChatColor.BLUE + e.getDisplayName() + " Scored");
-		}
-		else {
+		} else {
 			GameTitle(5, ChatColor.RED + e.getDisplayName() + " Scored");
 		}
 	}
-	
+
+
+	public void finish(BridgePlayer finisher) {
+
+		for(BridgePlayer b: p) {
+			if(b.isBlue() == finisher.isBlue()) {
+				b.bp.setGameMode(GameMode.SPECTATOR);
+			}
+
+			ChatMessage.finish(b, this, finisher);
+
+		}
+
+
+
+		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+			@Override
+			public void run() {
+				for(BridgePlayer b: p) {
+					gm.playerLeave(b.bp);
+				}
+			}
+		}, 100);
+
+	}
+
+
 	public void reset() {
 
 		protector.rebuild();
 
 		for (int i = 0; i < p.size(); i++) {
 
-			for (PotionEffect effect : p.get(i).getActivePotionEffects())
-				p.get(i).removePotionEffect(effect.getType());
+			Player bp = p.get(i).bp;
 
-			p.get(i).getInventory().clear();
+			for (PotionEffect effect : bp.getActivePotionEffects())
+				bp.removePotionEffect(effect.getType());
 
-			if(isBlue(p.get(i))) {
-				giveItems(p.get(i), 11);
-				p.get(i).teleport(map.blueSpawn);
-			}
-			else {
-				giveItems(p.get(i), 14);
-				p.get(i).teleport(map.redSpawn);
+			bp.getInventory().clear();
+
+			if (p.get(i).isBlue()) {
+				giveItems(bp, 11);
+				bp.teleport(map.blueSpawn);
+			} else {
+				giveItems(bp, 14);
+				bp.teleport(map.redSpawn);
 			}
 
 		}
 
+	}
 
-	}
-	
-	public static Boolean isBlue(Player p) {
-		if(p.getInventory().getChestplate().getItemMeta().getDisplayName().equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&', "&4Blue Shirt"))) {
-			return true;
+	public void gameStartTitle() {
+		for(BridgePlayer ibp: p) {
+			PacketUtils.sendActionBar(ibp.bp, ChatColor.YELLOW + "Game Starting");
 		}
-		return false;
+		GameTitle(5, ChatColor.GREEN + "");
 	}
-	
-	public void gameStartTitle(Player p) {
-		PacketUtils.sendActionBar(p, ChatColor.YELLOW + "Game Starting");
-		GameTitle(5,ChatColor.GREEN + "Game Starting");
-	}
-	
+
 	@SuppressWarnings("deprecation")
 	public void cages() {
 
+		for(BridgePlayer b: p) {
+			b.bp.setGameMode(GameMode.ADVENTURE);
+		}
 		
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.blueCageReplaceCmd);
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), map.redCageReplaceCmd);
-		
-		for(int x = map.redCageRemoveLoc.x; x <= map.redCageRemoveLoc.x+map.redCageRemoveSize.x; x++) {
-			for(int y = map.redCageRemoveLoc.y; y <= map.redCageRemoveLoc.y+map.redCageRemoveSize.y; y++) {
-				for(int z = map.redCageRemoveLoc.z; z <= map.redCageRemoveLoc.z+map.redCageRemoveSize.z; z++) {
-					Block paste = map.world.getBlockAt(x,y,z);
+		state = GameState.CAGE;
+
+		for (int x = map.redCageRemoveLoc.x; x <= map.redCageRemoveLoc.x + map.redCageRemoveSize.x; x++) {
+			for (int y = map.redCageRemoveLoc.y; y <= map.redCageRemoveLoc.y + map.redCageRemoveSize.y; y++) {
+				for (int z = map.redCageRemoveLoc.z; z <= map.redCageRemoveLoc.z + map.redCageRemoveSize.z; z++) {
+					Block paste = map.world.getBlockAt(x, y, z);
 					xyz pastediff = map.redCageDiff;
-					Block copy = map.world.getBlockAt(x+pastediff.x,y+pastediff.y,z+pastediff.z);
-							
+					Block copy = map.world.getBlockAt(x + pastediff.x, y + pastediff.y, z + pastediff.z);
+
 					paste.setType(copy.getType());
 					paste.setData(copy.getData());
-					
+
 				}
 			}
 		}
-		
-		for(int x = map.blueCageRemoveLoc.x; x <= map.blueCageRemoveLoc.x+map.blueCageRemoveSize.x; x++) {
-			for(int y = map.blueCageRemoveLoc.y; y <= map.blueCageRemoveLoc.y+map.blueCageRemoveSize.y; y++) {
-				for(int z = map.blueCageRemoveLoc.z; z <= map.blueCageRemoveLoc.z+map.blueCageRemoveSize.z; z++) {
-					Block paste = map.world.getBlockAt(x,y,z);
+
+		for (int x = map.blueCageRemoveLoc.x; x <= map.blueCageRemoveLoc.x + map.blueCageRemoveSize.x; x++) {
+			for (int y = map.blueCageRemoveLoc.y; y <= map.blueCageRemoveLoc.y + map.blueCageRemoveSize.y; y++) {
+				for (int z = map.blueCageRemoveLoc.z; z <= map.blueCageRemoveLoc.z + map.blueCageRemoveSize.z; z++) {
+					Block paste = map.world.getBlockAt(x, y, z);
 					xyz pastediff = map.blueCageDiff;
-					Block copy = map.world.getBlockAt(x+pastediff.x,y+pastediff.y,z+pastediff.z);
-							
+					Block copy = map.world.getBlockAt(x + pastediff.x, y + pastediff.y, z + pastediff.z);
+
 					paste.setType(copy.getType());
 					paste.setData(copy.getData());
-					
+
 				}
 			}
 		}
-		
+
 		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
 			@Override
 			public void run() {
-				
-				
-				for(int x = map.redCageRemoveLoc.x; x <= map.redCageRemoveLoc.x+map.redCageRemoveSize.x; x++) {
-					for(int y = map.redCageRemoveLoc.y; y <= map.redCageRemoveLoc.y+map.redCageRemoveSize.y; y++) {
-						for(int z = map.redCageRemoveLoc.z; z <= map.redCageRemoveLoc.z+map.redCageRemoveSize.z; z++) {
-							map.world.getBlockAt(x,y,z).setType(Material.AIR);
+
+				for (int x = map.redCageRemoveLoc.x; x <= map.redCageRemoveLoc.x + map.redCageRemoveSize.x; x++) {
+					for (int y = map.redCageRemoveLoc.y; y <= map.redCageRemoveLoc.y + map.redCageRemoveSize.y; y++) {
+						for (int z = map.redCageRemoveLoc.z; z <= map.redCageRemoveLoc.z
+								+ map.redCageRemoveSize.z; z++) {
+							map.world.getBlockAt(x, y, z).setType(Material.AIR);
 						}
 					}
 				}
-				
-				for(int x = map.blueCageRemoveLoc.x; x <= map.blueCageRemoveLoc.x+map.blueCageRemoveSize.x; x++) {
-					for(int y = map.blueCageRemoveLoc.y; y <= map.blueCageRemoveLoc.y+map.blueCageRemoveSize.y; y++) {
-						for(int z = map.blueCageRemoveLoc.z; z <= map.blueCageRemoveLoc.z+map.blueCageRemoveSize.z; z++) {
-							map.world.getBlockAt(x,y,z).setType(Material.AIR);
+
+				for (int x = map.blueCageRemoveLoc.x; x <= map.blueCageRemoveLoc.x + map.blueCageRemoveSize.x; x++) {
+					for (int y = map.blueCageRemoveLoc.y; y <= map.blueCageRemoveLoc.y
+							+ map.blueCageRemoveSize.y; y++) {
+						for (int z = map.blueCageRemoveLoc.z; z <= map.blueCageRemoveLoc.z
+								+ map.blueCageRemoveSize.z; z++) {
+							map.world.getBlockAt(x, y, z).setType(Material.AIR);
 						}
 					}
 				}
-				
-				for(Entity e: map.world.getEntities()) {
-					if(e instanceof Item) {
+
+				for (Entity e : map.world.getEntities()) {
+					if (e instanceof Item) {
 						e.remove();
 					}
 				}
-				
+
 				state = GameState.RUNNING;
-				
+				for(BridgePlayer b: p) {
+					b.bp.setGameMode(GameMode.SURVIVAL);
+				}
 
 			}
 		}, 100);
 	}
 
-	public void GameTitle(int seconds, String title) { 
-		
-		t = seconds;
-		
-		int id = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
-				@Override
-				public void run() {
-					
-					for(Player e: p) {
-						PacketUtils.sendTitle(e, title, "Game starting in "+ t, 0, 20, 0);
-						e.playSound(e.getLocation(), Sound.CLICK, 1, 1);
-					}
-					
-					t = t - 1;
+	public BridgePlayer getBP(Player input) {
+		for (BridgePlayer bridgeP : p) {
+			if (bridgeP.bp.getUniqueId() == input.getUniqueId()) {
+				return bridgeP;
+			}
+		}
+		return null;
+	}
 
-				} 
+	public void GameTitle(int seconds, String title) {
+
+		t = seconds;
+
+		int id = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
+			@Override
+			public void run() {
+
+				for (BridgePlayer e : p) {
+					PacketUtils.sendTitle(e.bp, title, "Cages opening in " + t + "...", 0, 20, 0);
+					e.bp.playSound(e.bp.getLocation(), Sound.CLICK, 1, 1);
+				}
+
+				t = t - 1;
+
+			}
 		}, 0, 20).getTaskId();
-		
-		
-			
+
 		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
 			@Override
 			public void run() {
 				Bukkit.getScheduler().cancelTask(id);
-				for(Player e: p) {
-					PacketUtils.sendTitle(e, "", "", 0, 20, 0);
-					e.playSound(e.getLocation(), Sound.NOTE_PLING, 1, 1);
+				for (BridgePlayer e : p) {
+					PacketUtils.sendTitle(e.bp, "", "", 0, 20, 0);
+					e.bp.playSound(e.bp.getLocation(), Sound.NOTE_PLING, 1, 1);
 				}
 
 			}
-		}, seconds*20 + 1);
+		}, seconds * 20 + 1);
 	}
 
 }

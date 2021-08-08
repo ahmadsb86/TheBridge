@@ -29,6 +29,7 @@ public class GameManager {
 		for(Game g: games) {
 			if(g.state == GameState.WAITING || g.state == GameState.EMPTY) return g;
 		}
+		Bukkit.broadcastMessage(games.get(0).state.toString());
 		return null;
 	}
 
@@ -59,7 +60,7 @@ public class GameManager {
 	public void playerLeave(Player p) {
 		if(gamers.containsKey(p)) {
 			Game g = gamers.get(p);
-			g.unregisterPlayer(p);
+			g.unregisterPlayer(g.getBP(p));
 			gamers.remove(p);
 			if(g.p.size() == 0) {
 				g.end();

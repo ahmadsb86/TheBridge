@@ -53,14 +53,17 @@ public class MapProtect implements Listener {
 			}
 
 
-			if (b.getX() > map.buildLim || b.getX() < 0-map.buildLim) {
+			if (b.getX() < map.buildLim  && b.getX() > 0-map.buildLim) {
+				placed.put(b.getLocation(), b.getType());
+			}
+			else {
 				event.setCancelled(true);
 				event.getPlayer().sendMessage(
 						ChatColor.translateAlternateColorCodes('&', "&4bruh imagine trying to spam bloc"));
 				return;
 			}
 
-			placed.put(b.getLocation(), b.getType());
+			
 		}
 	}
 
@@ -73,7 +76,7 @@ public class MapProtect implements Listener {
 		}
 		for (HashMap.Entry<Location, Material> me : braked.entrySet()) {
 			Block b = Bukkit.getWorld(map.name).getBlockAt(me.getKey());
-			if (b.getY() < map.bridgeLevel) {
+			if (b.getY() < map.bridgeLevel && b.getX() == 0) {
 				b.setType(me.getValue());
 				if (b.getX() > 0) {
 					b.setData((byte) 14);

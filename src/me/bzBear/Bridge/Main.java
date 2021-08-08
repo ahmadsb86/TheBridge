@@ -5,7 +5,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.github.games647.scoreboardstats.ScoreboardStats;
@@ -21,25 +23,20 @@ public class Main extends JavaPlugin{
 	GameManager gm;
 	Location hub;
 	Boolean useHolographicDisplays;
-	Boolean useScoreboardStats;
 	Hologram hologram;
 
 
 	@Override
 	public void onEnable(){
-
+		
+		FileManager.loadConfig(this);
+		
 		useHolographicDisplays = Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays");
-		useScoreboardStats = Bukkit.getPluginManager().isPluginEnabled("ScoreboardStats");
 
 		if (useHolographicDisplays == false) {
 			getLogger().severe("*** HolographicDisplays is not installed or not enabled. ***");
 			getLogger().severe("*** This plugin will not work correctly. ***");
 		}
-		
-        if (useScoreboardStats == false) {
-        	//a
-        }
-
 
 		gm = new GameManager(this);
 		hub =  new Location(Bukkit.getWorld("world"), 0, 100, 0);
@@ -51,7 +48,8 @@ public class Main extends JavaPlugin{
 			hologram.delete();
 		}
 	}
-
+	
+	
 
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
@@ -71,7 +69,27 @@ public class Main extends JavaPlugin{
 				break;
 
 			case "leave":	
-				gm.playerLeave(p);
+				if(gm.gamers.containsKey(p)) {
+					
+				}
+				else {
+					p.sendMessage(ChatColor.RED + "Error: Unable to find you in a game");
+					break;
+				}
+				Game gamus = gm.gamers.get(p);
+				
+				
+				if(gamus.state == GameState.RUNNING) {
+					if(gamus.getBP(p) != null) {
+						gm.playerLeave(p);
+					}
+					else {
+						p.sendMessage(ChatColor.RED + "Error: Unable to find you in a game");
+					}
+				}
+				else {
+					p.sendMessage(ChatColor.RED + "You must be in a running game and not in a cage to run this command");
+				}
 				p.sendMessage(ChatColor.AQUA + "Game Left");
 				break;
 
@@ -101,8 +119,14 @@ public class Main extends JavaPlugin{
 				
 			case "score":
 				if(gm.gamers.containsKey(p)) {
-					if(gm.gamers.get(p).state == GameState.RUNNING) {
-						gm.gamers.get(p).score(p);
+					Game gaem = gm.gamers.get(p);
+					if(gaem.state == GameState.RUNNING) {
+						if(gaem.getBP(p) != null) {
+							gaem.score(gaem.getBP(p));
+						}
+						else {
+							p.sendMessage(ChatColor.RED + "Error: Unable to find you in a game");
+						}
 					}
 					else {
 						p.sendMessage(ChatColor.RED + "You must be in a running game and not in a cage to run this command");
