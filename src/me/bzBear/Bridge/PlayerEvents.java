@@ -216,19 +216,26 @@ public class PlayerEvents implements Listener {
 							e.bp.removePotionEffect(effect.getType());
 						e.bp.getInventory().clear();
 						ChatColor c = ChatColor.BLUE;
+						ChatColor opp = ChatColor.BLUE;
 						if (e.isBlue()) {
 							c = ChatColor.BLUE;
 							e.bp.teleport(g.map.blueSpawn);
+							opp = ChatColor.RED;
 						} else {
 							c = ChatColor.RED;
 							e.bp.teleport(g.map.redSpawn);
+							opp = ChatColor.BLUE;
 						}
 						e.bp.setHealth(20);
 						g.giveItems(e.bp, 11);
 						for (BridgePlayer p : g.p) {
 							p.bp.playSound(p.bp.getLocation(), Sound.NOTE_PLING, 1, 1);
+							if(e.lastDamager == e) {
+								p.bp.sendMessage(c + e.bp.getDisplayName() + ChatColor.WHITE + " died");
+										
+							}
 							p.bp.sendMessage(c + e.bp.getDisplayName() + ChatColor.WHITE + " was killed by "
-									+ e.lastDamager.bp.getDisplayName());
+									+ opp + e.lastDamager.bp.getDisplayName());
 						}
 						
 					}
